@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smash Bros Movement</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="1000" height="800"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let gameRunning = true;
+
+        const player1 = {
+            x: 50,
+            y: canvas.height - 50,
+            width: 30,
+            height: 30,
+            color: "blue",
+            speed: 3,
+            sprintSpeed: 6,
+            jumpPower: 6,
+            gravity: 0.2,
+            isJumping: false,
+            jumpCount: 0,
+            maxJumps: 2,
+            canJump: true,
+            moveLeft: false,
+            moveRight: false,
+            isSprinting: false,
+            velocityY: 0,
+            lives: 3,
+            isRespawning: false
+        };
+
+        const player2 = {
+            x: canvas.width - 80,
+            y: canvas.height - 50,
+            width: 30,
+            height: 30,
+            color: "red",
+            speed: 3,
+            sprintSpeed: 6,
+            jumpPower: 6,
+            gravity: 0.2,
+            isJumping: false,
+            jumpCount: 0,
+            maxJumps: 2,
+            canJump: true,
+            moveLeft: false,
+            moveRight: false,
+            isSprinting: false,
+            velocityY: 0,
+            lives: 3,
+            isRespawning: false
+        };
+
+        const startPosition1 = { x: canvas.width / 4, y: canvas.height / 2 };
+        const startPosition2 = { x: (canvas.width * 3) / 4, y: canvas.height / 2 };
+
+        document.addEventListener("keydown", keyDownHandler);
+        document.addEventListener("keyup", keyUpHandler);
+
+        function keyDownHandler(e) {
+            if (!gameRunning && e.key === "Enter") {
+                resetGame();
+                return;
+            }
+
+            if (!gameRunning) return;
+
+            if (e.key == "w" && !player1.isRespawning) {
+                if (player1.canJump) {
+                    player1.velocityY = -player1.jumpPower;
+                    player1.isJumping = true;
+                    player1.jumpCount++;
+                    if (player1.jumpCount >= player1.maxJumps) {
+                        player1.canJump = false;
+                    }
+                }
+            } else if (e.key == "ArrowUp" && !player2.isRespawning) {
+                if (player2.canJump) {
+                    player2.velocityY = -player2.jumpPower;
+                    player2.isJumping = true;
+                    player2.jumpCount++;
+                    if (player2.jumpCount >= player2.maxJumps) {
+                        player2.canJump = false;
+                    }
+                }
+            } else if (e.key == "a") {
+                if (!player1.isRespawning) {
+                    if (player1.moveLeft) {
+                        if (player1.previousMove == "left") {
+                            player1.isSprinting = true;
+                        }
+                        player1.previousMove = "left";
+                    }
+                    player1.moveLeft = true;
+                }
+            } else if (e.key == "d") {
+                if (!player1.isRespawning) {
+                    if (player1.moveRight) {
+                        if (player1.previousMove == "right") {
+                            player1.isSprinting = true;
+                        }
+                        player1.previousMove = "right";
+                    }
+                    player1.moveRight = true;
+                }
+            } else if (e.key == "ArrowLeft") {
+                if (!player2.isRespawning) {
+                    if (player2.moveLeft) {
+                        if (player2.previousMove == "left") {
+                            player2.isSprinting = true;
+                        }
+                        player2.previousMove = "left";
+                    }
+                    player2.moveLeft = true;
+                }
+            } else if (e.key == "ArrowRight") {
+                if (!player2.isRespawning) {
+                    if (player2.moveRight) {
+                        if (player2.previousMove == "right") {
+                            player2.isSprinting = true;
+                        }
+                        player2.previousMove = "right";
+                    }
+                    player2.moveRight = true;
+                }
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (!gameRunning) return;
+
+            if (e.key == "a") {
+                player1.moveLeft = false;
+                if (!player1.moveRight) {
+                    player1.isSprinting = false;
+                }
+            } else if (e.key == "d") {
+                player1.moveRight = false;
+                if (!player1.moveLeft) {
+                    player1.isSprinting = false;
+                }
+            } else if (e.key == "ArrowLeft") {
+                player2.moveLeft = false;
+                if (!player2.moveRight) {
+                    player2.isSprinting = false;
+                }
+            } else if (e.key == "ArrowRight") {
+                player2.moveRight = false;
+                if (!player2.moveLeft) {
+                    player2.isSprinting = false;
+                }
+            }
+        }
+
+        function drawPlayer(player) {
+            ctx.beginPath();
+            ctx.rect(player.x, player.y, player.width, player.height);
+            ctx.fillStyle = player.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawLives() {
+            ctx.fillStyle = player1.color;
+            ctx.font = "20px Arial";
+            ctx.fillText("Lives: " + player1.lives, 10, 30);
+
+            ctx.fillStyle = player2.color;
+            ctx.font = "20px Arial";
+            ctx.fillText("Lives: " + player2.lives, canvas.width - 100, 30);
+        }
+
+        function respawnPlayer(player, startPosition) {
+            player.x = startPosition.x;
+            player.y = startPosition.y;
+            player.isJumping = true;
+            player.jumpCount = 0;
+            player.canJump = false;
+            player.isRespawning = true;
+            setTimeout(() => {
+                player.isRespawning = false;
+            }, 1000);
+        }
+
+        function checkOutOfBounds(player, startPosition) {
+            if (player.x < -player.width || player.x > canvas.width || player.y + player.height < 0 || player.y > canvas.height || player.x < 0 || player.x + player.width > canvas.width) {
+                player.lives--;
+                if (player.lives === -1) {
+                    gameRunning = false;
+                    document.body.style.backgroundColor = "lightgray";
+                    clearInterval(gameLoopInterval);
+                    ctx.font = "50px Arial";
+                    ctx.fillStyle = player === player1 ? player2.color : player1.color;
+                    ctx.fillText(player === player1 ? "Player 2 Wins!" : "Player 1 Wins!", canvas.width / 2 - 150, canvas.height / 2);
+                    return;
+                }
+                respawnPlayer(player, player === player1 ? startPosition1 : startPosition2);
+            }
+        }
+
+function resetGame() {
+    player1.lives = 3;
+    player2.lives = 3;
+    gameRunning = true;
+    player1.moveLeft = false;
+    player1.moveRight = false;
+    player1.isSprinting = false;
+    player2.moveLeft = false;
+    player2.moveRight = false;
+    player2.isSprinting = false;
+    document.body.style.backgroundColor = "";
+    respawnPlayer(player1, startPosition1);
+    respawnPlayer(player2, startPosition2);
+    gameLoopInterval = setInterval(update, 10);
+}
+
+        function update() {
+            if (!gameRunning) return;
+
+            // Player 1 movement
+            if (player1.moveLeft && player1.x > 0) {
+                player1.x -= player1.isSprinting ? player1.sprintSpeed : player1.speed;
+            }
+            if (player1.moveRight && player1.x < canvas.width - player1.width) {
+                player1.x += player1.isSprinting ? player1.sprintSpeed : player1.speed;
+            }
+
+            // Player 2 movement
+            if (player2.moveLeft && player2.x > 0) {
+                player2.x -= player2.isSprinting ? player2.sprintSpeed : player2.speed;
+            }
+            if (player2.moveRight && player2.x < canvas.width - player2.width) {
+                player2.x += player2.isSprinting ? player2.sprintSpeed : player2.speed;
+            }
+
+            // Player 1 jump
+            if (player1.isJumping) {
+                player1.y += player1.velocityY;
+                player1.velocityY += player1.gravity;
+
+                if (player1.y > canvas.height - player1.height) {
+                    player1.y = canvas.height - player1.height;
+                    player1.isJumping = false;
+                    player1.velocityY = 0;
+                    player1.jumpCount = 0;
+                    player1.canJump = true;
+                }
+            } else {
+                if (player1.y < canvas.height - player1.height) {
+                    player1.y += player1.gravity;
+                }
+            }
+
+            // Player 2 jump
+            if (player2.isJumping) {
+                player2.y += player2.velocityY;
+                player2.velocityY += player2.gravity;
+
+                if (player2.y > canvas.height - player2.height) {
+                    player2.y = canvas.height - player2.height;
+                    player2.isJumping = false;
+                    player2.velocityY = 0;
+                    player2.jumpCount = 0;
+                    player2.canJump = true;
+                }
+            } else {
+                if (player2.y < canvas.height - player2.height) {
+                    player2.y += player2.gravity;
+                }
+            }
+
+            checkOutOfBounds(player1, startPosition1);
+            checkOutOfBounds(player2, startPosition2);
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer(player1);
+            drawPlayer(player2);
+            drawLives();
+        }
+
+        let gameLoopInterval = setInterval(update, 10);
+    </script>
+</body>
+</html>
+
